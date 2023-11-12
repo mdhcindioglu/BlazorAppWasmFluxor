@@ -1,0 +1,59 @@
+﻿@using BlazorAppWasm.Client.Store.ListStateUseCase
+@using BlazorAppWasm.Shared
+@inject IState<ListState> ListState
+@inject IDispatcher Dispatcher
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="Item" OnSubmit="Save">
+            <div class="mb-3">
+                <label class="form-label">Id</label>
+                <InputNumber @bind-Value="@Item.Id" readonly class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <InputText @bind-Value="@Item.FirstName" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <InputText @bind-Value="@Item.LastName" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <InputText @bind-Value="@Item.Email" class="form-control" />
+            </div>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" ButtonType="ButtonType.Button">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Save">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [Parameter] public Item Item { get; set; } = default!;
+
+    void Save()
+    {
+        if (Item.Id == 0)
+        {
+            Item.Id = Item.List.Count + 1;
+            var actionAddItem = new AddItemAction();
+            actionAddItem.Item = Item;
+            Dispatcher.Dispatch(actionAddItem);
+        }
+        else
+        {
+            var actionEditItem = new EditItemAction();
+            actionEditItem.Item = Item;
+            Dispatcher.Dispatch(actionEditItem);
+        }
+
+        var actionFillList = new FillListAction();
+        Dispatcher.Dispatch(actionFillList);
+
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+    void Cancel() => MudDialog?.Cancel();
+}

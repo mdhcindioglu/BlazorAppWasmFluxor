@@ -1,0 +1,90 @@
+﻿@page "/List"
+@inherits Fluxor.Blazor.Web.Components.FluxorComponent
+@using BlazorAppWasm.Client.Store.ListStateUseCase
+@using BlazorAppWasm.Shared
+@inject IState<ListState> ListState
+@inject IDispatcher Dispatcher
+@inject IDialogService DialogService
+
+<div class="d-flex mb-3">
+    <h3>List</h3>
+    <button class="btn btn-primary ms-auto" @onclick="Add">Add</button>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th width="1%"></th>
+        </tr>
+    </thead>
+    @if (ListState.Value.ListItems?.Any() == true)
+    {
+        <tbody>
+            @foreach (var item in ListState.Value.ListItems)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.FirstName</td>
+                    <td>@item.LastName</td>
+                    <td>@item.Email</td>
+                    <td class="text-nowrap">
+                        <button class="btn btn-link btn-sm text-primary shadow-none py-0" @onclick="@(() => Edit(item.Id))">Edit</button>
+                        <button class="btn btn-link btn-sm text-danger shadow-none py-0" @onclick="@(() => Delete(item.Id))">Del</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    }
+    else
+    {
+        <tr><td>No items.</td></tr>
+    }
+</table>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        FillItems();
+    }
+
+    void FillItems()
+    {
+        var action = new FillListAction();
+        Dispatcher.Dispatch(action);
+    }
+
+    void Add()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters();
+        parameters.Add("Item", new Item() { Id = 0, FirstName = $"FirstName{Item.List.Count + 1}", LastName = $"LastName{Item.List.Count + 1}", Email = $"Email{Item.List.Count + 1}", });
+        DialogService.Show<ItemDialog>("Add Item", parameters, options);
+    }
+
+    void Edit(int id)
+    {
+        var item = Item.List.FirstOrDefault(x => x.Id == id);
+        if (item != null)
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true };
+            var parameters = new DialogParameters();
+            parameters.Add("Item", item);
+            DialogService.Show<ItemDialog>("Edit Item", parameters, options);
+        }
+    }
+
+    void Delete(int id)
+    {
+        var item = Item.List.FirstOrDefault(x => x.Id == id);
+        if (item != null)
+        {
+            var action = new DeleteItemAction(id);
+            Dispatcher.Dispatch(action);
+        }
+    }
+}
